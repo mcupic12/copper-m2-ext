@@ -310,6 +310,8 @@ function SentInput({ step }: { step: ToolStep }) {
     return <p>Nothing, it just asked for the price list</p>;
   if (step.name === "get_products")
     return <p>Nothing, it just asked what Copper sells</p>;
+  if (step.name === "get_plan_details")
+    return <p>Nothing, it just asked what each plan includes</p>;
   if (!isRec(step.input))
     return (
       <p className="text-muted-foreground italic">filling in the details…</p>
@@ -402,6 +404,35 @@ function CameBack({ name, output }: { name: string; output: unknown }) {
                 </span>
               ))}
             </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (name === "get_plan_details" && Array.isArray(output.plans)) {
+    return (
+      <div className="flex flex-col gap-3">
+        {(output.plans as Rec[]).map((plan) => (
+          <div key={String(plan.id)}>
+            <p className="flex justify-between gap-4 font-medium">
+              <span>{String(plan.name)}</span>
+              <span>
+                {Number(plan.monthlyUsd) > 0
+                  ? `${formatUsd(Number(plan.monthlyUsd))}/mo · ${formatUsd(Number(plan.annualUsd))}/yr`
+                  : formatUsd(0)}
+              </span>
+            </p>
+            <Rows
+              rows={[
+                ["Memory kept", String(plan.memoryKept)],
+                ["Notes recording", String(plan.notesRecording)],
+                [
+                  "Refined answers",
+                  plan.refinedAnswers ? "Included" : "Not included",
+                ],
+              ]}
+            />
           </div>
         ))}
       </div>

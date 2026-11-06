@@ -1,10 +1,13 @@
-// Module 2: the four tools Ask Copper can use. Products and prices come from
+// Module 2: the tools Ask Copper can use. Products and prices come from
 // lib/copper/catalog.ts and stock from lib/copper/inventory.ts, so the
 // chatbot never has to make them up.
-// The contract for each tool is in specs/module-2/spec.md.
+// The contract for the first four is in specs/module-2/spec.md; the fifth,
+// get_plan_details, is this extension's own.
 import { tool, type ToolSet } from "ai";
 import { z } from "zod";
 import {
+  formatMemory,
+  formatNotesHours,
   getPlans,
   getProducts,
   type Plan,
@@ -96,6 +99,33 @@ export function getPrices(): Prices {
       name,
       monthlyUsd,
       annualUsd,
+    })),
+  };
+}
+
+export type PlanDetails = {
+  plans: {
+    id: Plan["id"];
+    name: string;
+    monthlyUsd: number;
+    annualUsd: number;
+    memoryKept: string;
+    notesRecording: string;
+    refinedAnswers: boolean;
+  }[];
+};
+
+/** get_plan_details: what Free and Copper Plus each include, from the catalog. */
+export function getPlanDetails(): PlanDetails {
+  return {
+    plans: getPlans().map((plan) => ({
+      id: plan.id,
+      name: plan.name,
+      monthlyUsd: plan.monthlyUsd,
+      annualUsd: plan.annualUsd,
+      memoryKept: formatMemory(plan.memoryDays),
+      notesRecording: formatNotesHours(plan.notesHoursPerMonth),
+      refinedAnswers: plan.refinedAnswers,
     })),
   };
 }
@@ -234,5 +264,11 @@ export const copperTools: ToolSet = {
       "Checks today's stock for a Copper product, for one color or all of them, including when back-ordered colors restock.",
     inputSchema: checkAvailabilityInput,
     execute: async (input) => checkAvailability(input),
+  }),
+  get_plan_details: tool({
+    description:
+      "Compares what the Free plan and Copper Plus each include: memory kept, Copper Notes recording hours, Refined answers and price.",
+    inputSchema: z.object({}),
+    execute: async () => getPlanDetails(),
   }),
 };
